@@ -1,4 +1,5 @@
 const STORE_KEY = 'promptPocketData_v1';
+const VIEW_KEY = 'promptPocketView_v1';
 const DEFAULT_CATEGORIES = ['キャラ','衣装','髪型','表情','ポーズ','構図','背景','その他'];
 const SAMPLE_ITEMS = [
   {id:crypto.randomUUID(),title:'目隠れ前髪',category:'髪型',tags:['目隠れ','前髪'],prompt:'(heavy bangs:1.3), (long bangs:1.4), (hair covering the eyes:1.4), (front hair covering the eyes:1.35), (wispy uneven bangs:1.2)',negative:'blunt bangs, parted bangs, visible eyes',model:'SDXL',favorite:true,image:null,createdAt:Date.now()-3000,updatedAt:Date.now()-3000},
@@ -11,6 +12,7 @@ let activeCategory = 'すべて';
 let favoritesOnly = false;
 let detailId = null;
 let pendingImage = undefined;
+let viewMode = localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid';
 
 const $ = s => document.querySelector(s);
 const el = id => document.getElementById(id);
@@ -54,28 +56,48 @@ function render(){
   const items=filteredItems();
   itemCount.textContent=`${items.length}件`;
   el('toggleFavorites').classList.toggle('active',favoritesOnly);
-  cardGrid.innerHTML=items.map(cardHTML).join('');
+  el('gridViewBtn').classList.toggle('active',viewMode==='grid');
+  el('listViewBtn').classList.toggle('active',viewMode==='list');
+  cardGrid.classList.toggle('image-grid',viewMode==='grid');
+  cardGrid.classList.toggle('list-grid',viewMode==='list');
+  cardGrid.innerHTML=items.map(i=>viewMode==='grid'?imageCardHTML(i):listCardHTML(i)).join('');
   emptyState.classList.toggle('hidden',items.length>0);
   bindCards();
 }
-function cardHTML(i){
+function imageCardHTML(i){
+  const tags=(i.tags||[]).slice(0,3).map(t=>`<span class="tag">${escapeHTML(t)}</span>`).join('');
+  const visual=i.image
+    ? `<img class="image-card-cover" src="${i.image}" alt="${escapeHTML(i.title)}">`
+    : `<div class="image-card-cover image-placeholder"><span class="placeholder-mark">✦</span><span>${escapeHTML(i.category)}</span></div>`;
+  return `<article class="prompt-card image-card" data-id="${i.id}">
+    <button class="image-tap" data-detail aria-label="${escapeHTML(i.title)}の詳細を開く">${visual}</button>
+    <button class="overlay-fav ${i.favorite?'active':''}" data-fav aria-label="お気に入り">${i.favorite?'♥':'♡'}</button>
+    <button class="overlay-copy" data-copy aria-label="プロンプトをコピー">▣</button>
+    <div class="image-card-info" data-detail>
+      <div class="image-card-title">${escapeHTML(i.title)}</div>
+      <div class="badge-line compact"><span class="badge">${escapeHTML(i.category)}</span>${tags}</div>
+    </div>
+  </article>`;
+}
+function listCardHTML(i){
   const img=i.image?`<img class="thumb" src="${i.image}" alt="">`:`<div class="thumb placeholder">✦</div>`;
   const tags=(i.tags||[]).slice(0,3).map(t=>`<span class="tag">${escapeHTML(t)}</span>`).join('');
-  return `<article class="prompt-card" data-id="${i.id}">
+  return `<article class="prompt-card list-card" data-id="${i.id}">
     <div class="card-top">${img}<div class="card-main">
-      <div class="card-title-row"><div class="card-title">${escapeHTML(i.title)}</div><button class="fav-btn ${i.favorite?'active':''}" data-fav aria-label="お気に入り">${i.favorite?'♥':'♡'}</button><button class="more-btn" data-more aria-label="詳細">⋯</button></div>
+      <div class="card-title-row"><div class="card-title">${escapeHTML(i.title)}</div><button class="fav-btn ${i.favorite?'active':''}" data-fav aria-label="お気に入り">${i.favorite?'♥':'♡'}</button><button class="more-btn" data-detail aria-label="詳細">⋯</button></div>
       <div class="badge-line"><span class="badge">${escapeHTML(i.category)}</span>${tags}</div>
       <div class="snippet">${escapeHTML(i.prompt)}</div>
     </div></div>
-    <div class="card-footer"><span class="copy-hint">カードをタップでコピー</span><span class="model-note">${escapeHTML(i.model||'')}</span></div>
+    <div class="card-footer"><button class="list-copy" data-copy>プロンプトをコピー</button><span class="model-note">${escapeHTML(i.model||'')}</span></div>
   </article>`;
 }
 function bindCards(){
   cardGrid.querySelectorAll('.prompt-card').forEach(card=>{
     const id=card.dataset.id, item=state.items.find(x=>x.id===id);
-    card.addEventListener('click',e=>{if(e.target.closest('[data-fav],[data-more]'))return;copyText(item.prompt);});
-    card.querySelector('[data-fav]').addEventListener('click',e=>{e.stopPropagation();item.favorite=!item.favorite;item.updatedAt=Date.now();saveState();render();});
-    card.querySelector('[data-more]').addEventListener('click',e=>{e.stopPropagation();openDetail(id);});
+    card.querySelectorAll('[data-fav]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();item.favorite=!item.favorite;item.updatedAt=Date.now();saveState();render();}));
+    card.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();copyText(item.prompt);}));
+    card.querySelectorAll('[data-detail]').forEach(target=>target.addEventListener('click',e=>{e.stopPropagation();openDetail(id);}));
+    if(viewMode==='list') card.addEventListener('click',e=>{if(e.target.closest('button'))return;openDetail(id);});
   });
 }
 function resetForm(){
@@ -119,6 +141,8 @@ el('deletePrompt').addEventListener('click',()=>{const id=el('editingId').value;
 el('addPrompt').addEventListener('click',openAdd);el('emptyAdd').addEventListener('click',openAdd);el('cancelEdit').addEventListener('click',()=>el('editDialog').close());
 el('closeDetail').addEventListener('click',()=>el('detailDialog').close());el('editFromDetail').addEventListener('click',()=>openEdit(detailId));
 el('searchInput').addEventListener('input',render);el('toggleFavorites').addEventListener('click',()=>{favoritesOnly=!favoritesOnly;render();});
+el('gridViewBtn').addEventListener('click',()=>{viewMode='grid';localStorage.setItem(VIEW_KEY,viewMode);render();});
+el('listViewBtn').addEventListener('click',()=>{viewMode='list';localStorage.setItem(VIEW_KEY,viewMode);render();});
 
 function renderCategoryManager(){
   el('categoryManager').innerHTML=state.categories.map(c=>`<span class="manage-chip">${escapeHTML(c)}<button data-delcat="${escapeHTML(c)}" aria-label="削除">×</button></span>`).join('');
