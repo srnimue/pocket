@@ -24,3 +24,11 @@ v2 additions:
 - カード表示 / リスト表示の切り替え
 - カード表示は画像メイン。画像タップで詳細、右上のハートでお気に入り、右下のコピーアイコンでPromptコピー
 - 表示モードはブラウザに保存
+
+
+v3 changes
+- Up to 6 reference images per prompt
+- First image is used as the cover
+- Swipeable image gallery in details
+- Separate Model and LoRA fields
+- Legacy single-image data is migrated automatically

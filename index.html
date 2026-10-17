@@ -87,17 +87,21 @@
           <textarea id="negativeInput" rows="5" placeholder="worst quality, ..."></textarea>
         </label>
         <label class="field">
-          <span>モデル / メモ</span>
-          <input id="modelInput" placeholder="例：PixAI / SDXL / TSUBAKI2" />
+          <span>モデル</span>
+          <input id="modelInput" placeholder="例：SDXL / Illustrious / Pony" />
+        </label>
+        <label class="field">
+          <span>LoRA</span>
+          <input id="loraInput" placeholder="例：Detail Tweaker, Character LoRA" />
+          <small>複数ある場合はカンマ区切りでもOK</small>
         </label>
         <label class="field">
           <span>参考画像</span>
-          <input id="imageInput" type="file" accept="image/*" />
-          <small>端末内に保存されます。大きい画像は自動縮小します。</small>
+          <input id="imageInput" type="file" accept="image/*" multiple />
+          <small>最大6枚。1枚目がカードの表紙になります。大きい画像は自動縮小します。</small>
         </label>
         <div class="image-preview-wrap hidden" id="imagePreviewWrap">
-          <img id="imagePreview" alt="参考画像プレビュー" />
-          <button type="button" class="danger-link" id="removeImage">画像を削除</button>
+          <div class="image-preview-grid" id="imagePreviewGrid"></div>
         </div>
       </div>
       <div class="sheet-footer edit-only hidden" id="editOnlyActions">
