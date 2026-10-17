@@ -18,7 +18,7 @@ PixAI / SDXLなどで使うお気に入りプロンプトを、カテゴリ・�
 index.htmlをブラウザで開いて使用できます。GitHub Pagesにそのまま配置しても動作します。
 
 注意
-データはブラウザのlocalStorageに保存します。ブラウザデータを削除すると消える場合があります。定期的に設定画面からJSONを書き出してください。
+データ本体と画像はブラウザのIndexedDBに保存します。ブラウザデータを削除すると消える場合があります。定期的に設定画面からJSONを書き出してください。表示モードのみlocalStorageに保存します。
 
 v2 additions:
 - カード表示 / リスト表示の切り替え
@@ -32,3 +32,11 @@ v3 changes
 - Swipeable image gallery in details
 - Separate Model and LoRA fields
 - Legacy single-image data is migrated automatically
+
+
+v4 changes
+- Main data storage moved from localStorage to IndexedDB
+- Existing v3 localStorage data is migrated automatically on first launch
+- Reference images are stored as Blob data in IndexedDB
+- JSON backup/export still includes images for transfer between URLs/devices
+- Fixed the persistent blue focus/tap highlight around the detail Close button on iOS
